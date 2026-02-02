@@ -8,14 +8,37 @@ export default function HomeScreen() {
   const { open, provider, isConnected, address } = useWalletConnectModal();
   const { initialize, getUnifiedBalances, sdk, isInitialized } = useNexus();
 
-  const [loading, setLoading] = useState<null | "init" | "balances" | "bridge">(
-    null
-  );
+  const [loading, setLoading] = useState<
+    null | "connect" | "init" | "balances" | "bridge"
+  >(null);
 
   const shortAddress = useMemo(() => {
     if (!address) return null;
     return `${address.slice(0, 6)}…${address.slice(-4)}`;
   }, [address]);
+
+  const onConnect = async () => {
+    try {
+      setLoading("connect");
+
+      if (isConnected) {
+        Alert.alert("Wallet", "Wallet already connected");
+        return;
+      }
+
+      await open(); // opens WalletConnect modal
+
+      if (!provider) {
+        throw new Error("Wallet provider missing");
+      }
+
+      Alert.alert("Wallet", "Wallet connected successfully");
+    } catch (e: any) {
+      Alert.alert("Connect failed", e?.message ?? String(e));
+    } finally {
+      setLoading(null);
+    }
+  };
 
   const onInit = async () => {
     try {
@@ -76,6 +99,7 @@ export default function HomeScreen() {
     }
   };*/
 
+  const connectDisabled = loading !== null || isConnected;
   const initDisabled = loading !== null;
   const balancesDisabled = loading !== null || !isInitialized;
   const bridgeDisabled = loading !== null || !isInitialized;
@@ -87,6 +111,16 @@ export default function HomeScreen() {
           ? `Connected: ${shortAddress}`
           : "Wallet not connected"}
       </Text>
+
+      <TouchableOpacity
+        style={[styles.btn, connectDisabled && styles.disabled]}
+        onPress={onConnect}
+        disabled={connectDisabled}
+      >
+        <Text style={styles.text}>
+          {loading === "connect" ? "Connecting..." : "Connect Wallet"}
+        </Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.btn}
