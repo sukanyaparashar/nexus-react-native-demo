@@ -14,7 +14,18 @@ const Ctx = createContext<NexusCtx | null>(null);
 
 export function NexusProvider({ children }: PropsWithChildren) {
   // One SDK instance for the whole app
-  const sdk = useMemo(() => new NexusSDK({ network: "testnet" }), []);
+  const sdk = useMemo(
+    () =>
+      new NexusSDK({
+        network: "testnet",
+        siweParams: {
+          scheme: "https",
+          origin: "https://google.com",
+          domain: "google.com",
+        },
+      }),
+    [],
+  );
   const [isInitialized, setIsInitialized] = useState(false);
 
   const initializingRef = useRef<Promise<void> | null>(null);
