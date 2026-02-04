@@ -21,12 +21,21 @@ export default function HomeScreen() {
     try {
       setLoading("connect");
 
-      if (isConnected) {
-        Alert.alert("Wallet", "Wallet already connected");
+      // ---------- DISCONNECT ----------
+      if (isConnected && provider) {
+        try {
+          await provider.disconnect?.();
+        } catch {}
+
+        Alert.alert("Wallet", "Disconnected");
         return;
       }
 
-      await open(); // opens WalletConnect modal
+      // ---------- CONNECT ----------
+      await open();
+
+      // WalletConnect provider hydration delay
+      await new Promise((r) => setTimeout(r, 300));
 
       if (!provider) {
         throw new Error("Wallet provider missing");
@@ -113,12 +122,18 @@ export default function HomeScreen() {
       </Text>
 
       <TouchableOpacity
-        style={[styles.btn, connectDisabled && styles.disabled]}
+        style={styles.btn}
         onPress={onConnect}
-        disabled={connectDisabled}
+        disabled={loading === "connect"}
       >
         <Text style={styles.text}>
-          {loading === "connect" ? "Connecting..." : "Connect Wallet"}
+          {loading === "connect"
+            ? isConnected
+              ? "Disconnecting..."
+              : "Connecting..."
+            : isConnected
+              ? "Disconnect Wallet"
+              : "Connect Wallet"}
         </Text>
       </TouchableOpacity>
 
