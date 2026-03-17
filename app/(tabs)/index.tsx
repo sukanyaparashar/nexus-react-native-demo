@@ -8,14 +8,46 @@ export default function HomeScreen() {
   const { open, provider, isConnected, address } = useWalletConnectModal();
   const { initialize, getUnifiedBalances, sdk, isInitialized } = useNexus();
 
-  const [loading, setLoading] = useState<null | "init" | "balances" | "bridge">(
-    null
-  );
+  const [loading, setLoading] = useState<
+    null | "connect" | "init" | "balances" | "bridge"
+  >(null);
 
   const shortAddress = useMemo(() => {
     if (!address) return null;
     return `${address.slice(0, 6)}…${address.slice(-4)}`;
   }, [address]);
+
+  const onConnect = async () => {
+    try {
+      setLoading("connect");
+
+      // ---------- DISCONNECT ----------
+      if (isConnected && provider) {
+        try {
+          await provider.disconnect?.();
+        } catch {}
+
+        Alert.alert("Wallet", "Disconnected");
+        return;
+      }
+
+      // ---------- CONNECT ----------
+      await open();
+
+      // WalletConnect provider hydration delay
+      await new Promise((r) => setTimeout(r, 300));
+
+      if (!provider) {
+        throw new Error("Wallet provider missing");
+      }
+
+      Alert.alert("Wallet", "Wallet connected successfully");
+    } catch (e: any) {
+      Alert.alert("Connect failed", e?.message ?? String(e));
+    } finally {
+      setLoading(null);
+    }
+  };
 
   const onInit = async () => {
     try {
@@ -76,6 +108,7 @@ export default function HomeScreen() {
     }
   };*/
 
+  const connectDisabled = loading !== null || isConnected;
   const initDisabled = loading !== null;
   const balancesDisabled = loading !== null || !isInitialized;
   const bridgeDisabled = loading !== null || !isInitialized;
@@ -87,6 +120,22 @@ export default function HomeScreen() {
           ? `Connected: ${shortAddress}`
           : "Wallet not connected"}
       </Text>
+
+      <TouchableOpacity
+        style={styles.btn}
+        onPress={onConnect}
+        disabled={loading === "connect"}
+      >
+        <Text style={styles.text}>
+          {loading === "connect"
+            ? isConnected
+              ? "Disconnecting..."
+              : "Connecting..."
+            : isConnected
+              ? "Disconnect Wallet"
+              : "Connect Wallet"}
+        </Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.btn}
